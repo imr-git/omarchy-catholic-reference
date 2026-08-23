@@ -20,6 +20,7 @@
 
 const fs = require("fs")
 const os = require("os")
+const https = require("https")
 const path = require("path")
 
 const SCRIPT_ROOT = path.resolve(__dirname, "..")
@@ -246,6 +247,30 @@ function usage() {
 
 // --- daily Mass readings (universalis.com) --------------------------------
 
+const READINGS_UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+const MAX_RESPONSE_BYTES = 256 * 1024
+const MAX_CACHE_BYTES = 256 * 1024
+const READINGS_TIMEOUT_MS = 20000
+const MAX_REDIRECTS = 5
+const MAX_TABLES = 24
+const MAX_READINGS = 10
+const MAX_LINES_PER_READING = 600
+const FIELD_CAPS = {
+  title: 240,
+  rubric: 160,
+  color: 64,
+  year: 64,
+  label: 120,
+  reference: 240,
+  heading: 600,
+  text: 24000
+}
+
+function cap(value, max) {
+  const s = String(value || "")
+  return s.length > max ? s.slice(0, max) : s
+}
+
 function decodeHtml(s) {
   return String(s)
     .replace(/<br\s*\/?>/gi, "\n")
@@ -267,17 +292,73 @@ function match1(source, re) {
   return m ? m[1] : ""
 }
 
+// Stream the HTTPS body with a strict byte ceiling, a timeout, and bounded
+// redirect following.
+function httpsGet(url, maxBytes, timeoutMs, redirectsLeft) {
+  if (redirectsLeft === undefined) redirectsLeft = MAX_REDIRECTS
+  return new Promise((resolve, reject) => {
+    const req = https.get(url, { headers: { "User-Agent": READINGS_UA, Accept: "*/*" } }, (res) => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location && redirectsLeft > 0) {
+        res.resume()
+        try {
+          const next = new URL(res.headers.location, url).toString()
+          resolve(httpsGet(next, maxBytes, timeoutMs, redirectsLeft - 1))
+        } catch (e) {
+          reject(e)
+        }
+        return
+      }
+      if (res.statusCode !== 200) {
+        res.resume()
+        reject(new Error("HTTP " + res.statusCode))
+        return
+      }
+      const chunks = []
+      let total = 0
+      let settled = false
+      res.on("data", (chunk) => {
+        if (settled) return
+        total += chunk.length
+        if (total > maxBytes) {
+          settled = true
+          req.destroy()
+          reject(new Error("response exceeds byte limit"))
+          return
+        }
+        chunks.push(chunk)
+      })
+      res.on("end", () => {
+        if (settled) return
+        settled = true
+        resolve(Buffer.concat(chunks).toString("utf8"))
+      })
+      res.on("error", (err) => {
+        if (settled) return
+        settled = true
+        reject(err)
+      })
+    })
+    req.setTimeout(timeoutMs, () => {
+      req.destroy()
+      reject(new Error("request timed out"))
+    })
+    req.on("error", reject)
+  })
+}
+
 function parseUniversalis(html) {
-  const title = decodeHtml(match1(html, /<span id="feastname"><strong>([\s\S]*?)<\/strong>/)).trim()
-  const rubric = decodeHtml(match1(html, /<p class="rubric"><i>([\s\S]*?)<\/i><\/p>/)).trim()
+  if (typeof html !== "string" || html.length > MAX_RESPONSE_BYTES) throw new Error("HTML exceeds byte limit")
+
+  const title = cap(decodeHtml(match1(html, /<span id="feastname"><strong>([\s\S]*?)<\/strong>/)).trim(), FIELD_CAPS.title)
+  const rubric = cap(decodeHtml(match1(html, /<p class="rubric"><i>([\s\S]*?)<\/i><\/p>/)).trim(), FIELD_CAPS.rubric)
 
   let color = ""
   let year = ""
   if (rubric) {
     const cm = rubric.match(/Colour:\s*([^.;]+)/i)
     const ym = rubric.match(/Year:\s*([^.<]+)/i)
-    color = cm ? cm[1].trim() : ""
-    year = ym ? ym[1].trim() : ""
+    color = cap(cm ? cm[1].trim() : "", FIELD_CAPS.color)
+    year = cap(ym ? ym[1].trim() : "", FIELD_CAPS.year)
   }
 
   const tables = []
@@ -285,6 +366,7 @@ function parseUniversalis(html) {
   let m
   while ((m = tableRe.exec(html)) !== null) {
     tables.push({ start: m.index, end: m.index + m[0].length, raw: m[0] })
+    if (tables.length >= MAX_TABLES) break
   }
 
   const endIdx = html.indexOf("You can also view")
@@ -292,6 +374,7 @@ function parseUniversalis(html) {
 
   const readings = []
   for (let i = 0; i < tables.length; i++) {
+    if (readings.length >= MAX_READINGS) break
     const t = tables[i]
     const label = decodeHtml(match1(t.raw, /<th align="left">([\s\S]*?)<\/th>/)).trim()
     if (!label || label === "Or:") continue
@@ -308,13 +391,14 @@ function parseUniversalis(html) {
     while ((lm = lineRe.exec(seg)) !== null) {
       const line = decodeHtml(lm[1]).trim()
       if (line) lines.push(line)
+      if (lines.length >= MAX_LINES_PER_READING) break
     }
 
     readings.push({
-      label,
-      reference,
-      heading,
-      text: lines.join("\n")
+      label: cap(label, FIELD_CAPS.label),
+      reference: cap(reference, FIELD_CAPS.reference),
+      heading: cap(heading, FIELD_CAPS.heading),
+      text: cap(lines.join("\n"), FIELD_CAPS.text)
     })
   }
 
@@ -326,23 +410,52 @@ function localIsoDate() {
   return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0")
 }
 
+// Read a cached file descriptor-bound: no symlink following, regular-file and
+// ownership checks, and a size ceiling.
+function cacheRead(file) {
+  let fd
+  try {
+    fd = fs.openSync(file, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW)
+  } catch (e) {
+    return null
+  }
+  try {
+    const st = fs.fstatSync(fd)
+    if (!st.isFile() || st.isSymbolicLink()) return null
+    if (typeof process.getuid === "function" && st.uid !== process.getuid()) return null
+    if (st.size <= 0 || st.size > MAX_CACHE_BYTES) return null
+    const buf = Buffer.alloc(st.size)
+    fs.readSync(fd, buf, 0, st.size, 0)
+    return buf.toString("utf8")
+  } catch (e) {
+    return null
+  } finally {
+    try { fs.closeSync(fd) } catch (e) {}
+  }
+}
+
+// Write atomically via a same-directory exclusive temporary file, then rename.
+function cacheWrite(file, data) {
+  const dir = path.dirname(file)
+  fs.mkdirSync(dir, { recursive: true, mode: 0o700 })
+  const tmp = path.join(dir, "." + path.basename(file) + ".tmp." + process.pid + "." + Date.now())
+  fs.writeFileSync(tmp, data, { flag: "wx", mode: 0o600 })
+  fs.renameSync(tmp, file)
+}
+
 async function readingsCommand(dateArg, refresh) {
   const date = /^\d{4}-\d{2}-\d{2}$/.test(dateArg || "") ? dateArg : localIsoDate()
   const cacheDir = path.join(os.homedir(), ".local", "state", "omarchy", "catholic-reference")
   const cacheFile = path.join(cacheDir, "readings-" + date + ".json")
 
-  if (!refresh && fs.existsSync(cacheFile)) {
-    return fs.readFileSync(cacheFile, "utf8")
+  if (!refresh) {
+    const cached = cacheRead(cacheFile)
+    if (cached) return cached
   }
 
   const yyyymmdd = date.replace(/-/g, "")
   const url = "https://universalis.com/USA/" + yyyymmdd + "/mass.htm"
-  const res = await fetch(url, {
-    headers: { "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36" },
-    signal: AbortSignal.timeout(20000)
-  })
-  if (!res.ok) throw new Error("HTTP " + res.status)
-  const html = await res.text()
+  const html = await httpsGet(url, MAX_RESPONSE_BYTES, READINGS_TIMEOUT_MS)
   const parsed = parseUniversalis(html)
   if (!parsed.readings || parsed.readings.length === 0) throw new Error("No readings parsed")
 
@@ -350,8 +463,7 @@ async function readingsCommand(dateArg, refresh) {
   parsed.source = "universalis.com"
 
   const json = JSON.stringify(parsed)
-  fs.mkdirSync(cacheDir, { recursive: true })
-  fs.writeFileSync(cacheFile, json + "\n")
+  cacheWrite(cacheFile, json + "\n")
   return json
 }
 

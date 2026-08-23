@@ -100,7 +100,12 @@ Item {
     }
     onExited: function() {
       root.readingsLoading = false
-      var data = root.parse(readingsOutput.text, null)
+      var raw = String(readingsOutput.text || "")
+      if (raw.length > 262144) {
+        root.readingsError = "Readings response was too large."
+        return
+      }
+      var data = root.parse(raw, null)
       if (data && !data.error) {
         root.readings = data
         root.readingsError = ""
