@@ -62,7 +62,7 @@ network access; everything else is fully offline.
 - Prayers are bundled as `data/prayers.json`.
 - Mass readings are fetched from universalis.com and cached under
   `~/.local/state/omarchy/catholic-reference/` (one request per day).
-- No `sudo`, no background services, and no second Quickshell process.
+- Does not request elevated privileges, runs no background services, and starts no second Quickshell process.
 
 ## Regenerating the data
 
