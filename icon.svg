@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="128" height="128">
+  <g fill="none" stroke="#d4b15a" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Rho stem -->
+    <line x1="50" y1="80" x2="50" y2="22"/>
+    <!-- Rho loop -->
+    <path d="M50 5 A17 17 0 0 1 50 39"/>
+    <!-- Chi -->
+    <line x1="28" y1="82" x2="72" y2="20"/>
+    <line x1="72" y1="82" x2="28" y2="20"/>
+  </g>
+</svg>

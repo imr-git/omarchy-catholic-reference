@@ -1,0 +1,383 @@
+#!/usr/bin/env node
+"use strict"
+
+// omarchy-catholic — search backend for the Catholic Reference plugin.
+//
+// Reads the bundled Douay-Rheims index (data/bible.tsv), the canonical book
+// table (data/books.json), and the Catechism (data/catechism.json), and emits
+// tab-separated results the QML panel can parse:
+//
+//   STATUS\t<message>        a status/error line
+//   RESULT\t<ref>\t<text>    one search hit
+//
+// Commands:
+//   search bible QUERY       fuzzy text search + reference lookup
+//   search catechism QUERY   fuzzy search over CCC paragraphs
+//   read BOOK CH:V           exact reference lookup
+//
+// Fuzzy matching is subsequence-based, so "god so loved" finds
+// "For God so loved the world…" without an exact quote.
+
+const fs = require("fs")
+const os = require("os")
+const path = require("path")
+
+const SCRIPT_ROOT = path.resolve(__dirname, "..")
+const DATA_ROOT = path.join(SCRIPT_ROOT, "data")
+const MAX_RESULTS = 40
+
+// Ignore a closed pipe (e.g. output piped to `head`); the reader decides how
+// much it wants.
+process.stdout.on("error", function (err) {
+  if (err && err.code === "EPIPE") process.exit(0)
+  throw err
+})
+
+function readJson(file) {
+  return JSON.parse(fs.readFileSync(file, "utf8"))
+}
+
+function status(msg) {
+  process.stdout.write("STATUS\t" + msg + "\n")
+}
+
+function result(ref, text) {
+  // Collapse newlines/tabs so each hit stays a single line the QML panel can
+  // split on "\t" and "\n" unambiguously.
+  const clean = String(text || "").replace(/\s+/g, " ").trim()
+  process.stdout.write("RESULT\t" + ref + "\t" + clean + "\n")
+}
+
+function loadBooks() {
+  return readJson(path.join(DATA_ROOT, "books.json"))
+}
+
+function loadBible() {
+  const raw = fs.readFileSync(path.join(DATA_ROOT, "bible.tsv"), "utf8")
+  const lines = raw.split("\n")
+  const verses = []
+  for (const line of lines) {
+    const idx = line.indexOf("\t")
+    if (idx < 0) continue
+    const book = line.slice(0, idx)
+    const rest = line.slice(idx + 1)
+    const idx2 = rest.indexOf("\t")
+    if (idx2 < 0) continue
+    const ref = rest.slice(0, idx2)
+    const text = rest.slice(idx2 + 1)
+    verses.push({ book, ref, text })
+  }
+  return verses
+}
+
+function loadCatechism() {
+  return readJson(path.join(DATA_ROOT, "catechism.json"))
+}
+
+// --- fuzzy matching -------------------------------------------------------
+
+function subseqScore(query, text) {
+  let score = 0
+  let streak = 0
+  let lastIdx = -1
+  let ti = 0
+  for (let qi = 0; qi < query.length; qi++) {
+    const ch = query[qi]
+    const idx = text.indexOf(ch, ti)
+    if (idx === -1) return 0
+    if (idx === lastIdx + 1) streak++
+    else streak = 0
+    let bonus = 1
+    if (idx === 0) bonus += 16
+    else {
+      const prev = text[idx - 1]
+      if (prev === " " || prev === "-" || prev === "," || prev === "." || prev === ";" || prev === ":" || prev === "(" || prev === "'")
+        bonus += 10
+    }
+    score += bonus + Math.min(streak, 5)
+    ti = idx + 1
+    lastIdx = idx
+  }
+  return score
+}
+
+function fuzzyScore(query, text) {
+  const q = query.toLowerCase()
+  const t = text.toLowerCase()
+  const compact = q.replace(/\s+/g, "")
+  if (!compact) return 0
+  let score = subseqScore(compact, t)
+  if (score === 0) return 0
+  if (t.indexOf(q) !== -1) score += 40
+  return score
+}
+
+// --- book reference parsing -----------------------------------------------
+
+function normalizeName(value) {
+  return String(value || "").toLowerCase().replace(/[.\-,]/g, " ").replace(/\s+/g, " ").trim()
+}
+
+function bookForToken(books, token) {
+  const needle = normalizeName(token)
+  if (!needle) return null
+  for (const b of books) {
+    if (normalizeName(b.name) === needle) return b
+    if (normalizeName(b.abbrev) === needle) return b
+    for (const a of b.aliases || []) {
+      if (normalizeName(a) === needle) return b
+    }
+  }
+  return null
+}
+
+function parseReference(query, books) {
+  const m = query.trim().match(/^(.+?)\s+(\d+)(?::(\d+))?$/)
+  if (!m) return null
+  const book = bookForToken(books, m[1])
+  if (!book) return null
+  return { book: book.name, chapter: parseInt(m[2], 10), verse: m[3] ? parseInt(m[3], 10) : null }
+}
+
+// --- commands -------------------------------------------------------------
+
+function searchBible(query) {
+  const books = loadBooks()
+  const q = query.trim()
+  if (!q) {
+    status("Type a phrase, word, or reference to search the Bible.")
+    return
+  }
+  const verses = loadBible()
+
+  // Reference lookup: "John 3:16" or "Genesis 1".
+  const ref = parseReference(q, books)
+  if (ref) {
+    const prefix = ref.verse ? `${ref.book}\t${ref.chapter}:${ref.verse}` : `${ref.book}\t${ref.chapter}:`
+    const hits = []
+    for (const v of verses) {
+      const key = `${v.book}\t${v.ref}`
+      if (ref.verse ? key === prefix : key.startsWith(prefix)) hits.push(v)
+    }
+    if (hits.length > 0) {
+      for (const v of hits.slice(0, MAX_RESULTS)) result(`${v.book} ${v.ref}`, v.text)
+      status(hits.length + " verse" + (hits.length === 1 ? "" : "s"))
+      return
+    }
+    status("No verses match: " + q)
+    return
+  }
+
+  // Fuzzy text search.
+  const scored = []
+  for (let i = 0; i < verses.length; i++) {
+    const v = verses[i]
+    const score = fuzzyScore(q, v.text)
+    if (score > 0) scored.push({ score, index: i, v })
+  }
+  scored.sort((a, b) => (b.score - a.score) || (a.index - b.index))
+  const top = scored.slice(0, MAX_RESULTS)
+  if (top.length === 0) {
+    status("No matches for: " + q)
+    return
+  }
+  for (const s of top) result(`${s.v.book} ${s.v.ref}`, s.v.text)
+  status(top.length + " result" + (top.length === 1 ? "" : "s") + " · click to copy")
+}
+
+function searchCatechism(query) {
+  const q = query.trim()
+  if (!q) {
+    status("Type a word or phrase to search the Catechism.")
+    return
+  }
+  const paragraphs = loadCatechism()
+  const scored = []
+  for (let i = 0; i < paragraphs.length; i++) {
+    const p = paragraphs[i]
+    const score = fuzzyScore(q, p.text)
+    if (score > 0) scored.push({ score, index: i, p })
+  }
+  scored.sort((a, b) => (b.score - a.score) || (a.index - b.index))
+  const top = scored.slice(0, MAX_RESULTS)
+  if (top.length === 0) {
+    status("No Catechism paragraphs match: " + q)
+    return
+  }
+  for (const s of top) result("CCC " + s.p.id, s.p.text)
+  status(top.length + " paragraph" + (top.length === 1 ? "" : "s") + " · click to copy")
+}
+
+function readReference(reference) {
+  const books = loadBooks()
+  const ref = parseReference(reference, books)
+  if (!ref) {
+    status("Unrecognized reference. Try \"John 3:16\".")
+    return
+  }
+  const verses = loadBible()
+  const prefix = ref.verse ? `${ref.book}\t${ref.chapter}:${ref.verse}` : `${ref.book}\t${ref.chapter}:`
+  let found = 0
+  for (const v of verses) {
+    const key = `${v.book}\t${v.ref}`
+    if (ref.verse ? key === prefix : key.startsWith(prefix)) {
+      result(`${v.book} ${v.ref}`, v.text)
+      found++
+    }
+  }
+  if (found === 0) status("Reference not found: " + reference)
+}
+
+function usage() {
+  process.stdout.write(
+    [
+      "Usage:",
+      "  omarchy-catholic search bible QUERY",
+      "  omarchy-catholic search catechism QUERY",
+      "  omarchy-catholic read BOOK CH:V",
+      "  omarchy-catholic readings [YYYY-MM-DD] [--refresh]",
+      "",
+      "Fuzzy search runs locally over the bundled Douay-Rheims Bible and the",
+      "Catechism of the Catholic Church. `readings` fetches today's Mass",
+      "readings from universalis.com and caches them locally.",
+    ].join("\n") + "\n"
+  )
+}
+
+// --- daily Mass readings (universalis.com) --------------------------------
+
+function decodeHtml(s) {
+  return String(s)
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&#8217;|&#39;/g, "'")
+    .replace(/&#8211;/g, "\u2013")
+    .replace(/&#8212;/g, "\u2014")
+    .replace(/&#160;/g, " ")
+    .replace(/&#8220;|&#8221;/g, '"')
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&nbsp;/g, " ")
+}
+
+function match1(source, re) {
+  const m = String(source).match(re)
+  return m ? m[1] : ""
+}
+
+function parseUniversalis(html) {
+  const title = decodeHtml(match1(html, /<span id="feastname"><strong>([\s\S]*?)<\/strong>/)).trim()
+  const rubric = decodeHtml(match1(html, /<p class="rubric"><i>([\s\S]*?)<\/i><\/p>/)).trim()
+
+  let color = ""
+  let year = ""
+  if (rubric) {
+    const cm = rubric.match(/Colour:\s*([^.;]+)/i)
+    const ym = rubric.match(/Year:\s*([^.<]+)/i)
+    color = cm ? cm[1].trim() : ""
+    year = ym ? ym[1].trim() : ""
+  }
+
+  const tables = []
+  const tableRe = /<table class="each"[^>]*>[\s\S]*?<\/table>/g
+  let m
+  while ((m = tableRe.exec(html)) !== null) {
+    tables.push({ start: m.index, end: m.index + m[0].length, raw: m[0] })
+  }
+
+  const endIdx = html.indexOf("You can also view")
+  const limitEnd = endIdx >= 0 ? endIdx : html.length
+
+  const readings = []
+  for (let i = 0; i < tables.length; i++) {
+    const t = tables[i]
+    const label = decodeHtml(match1(t.raw, /<th align="left">([\s\S]*?)<\/th>/)).trim()
+    if (!label || label === "Or:") continue
+    const reference = decodeHtml(match1(t.raw, /<th align="right">([\s\S]*?)<\/th>/)).trim()
+    const segStart = t.end
+    const segEnd = i + 1 < tables.length ? tables[i + 1].start : limitEnd
+    const seg = html.slice(segStart, segEnd)
+
+    const heading = decodeHtml(match1(seg, /<h4[^>]*>([\s\S]*?)<\/h4>/)).trim()
+
+    const lines = []
+    const lineRe = /<div class="(?:p|v|vi|v gb)"[^>]*>([\s\S]*?)<\/div>/g
+    let lm
+    while ((lm = lineRe.exec(seg)) !== null) {
+      const line = decodeHtml(lm[1]).trim()
+      if (line) lines.push(line)
+    }
+
+    readings.push({
+      label,
+      reference,
+      heading,
+      text: lines.join("\n")
+    })
+  }
+
+  return { title, color, year, readings }
+}
+
+function localIsoDate() {
+  const d = new Date()
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0")
+}
+
+async function readingsCommand(dateArg, refresh) {
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(dateArg || "") ? dateArg : localIsoDate()
+  const cacheDir = path.join(os.homedir(), ".local", "state", "omarchy", "catholic-reference")
+  const cacheFile = path.join(cacheDir, "readings-" + date + ".json")
+
+  if (!refresh && fs.existsSync(cacheFile)) {
+    return fs.readFileSync(cacheFile, "utf8")
+  }
+
+  const yyyymmdd = date.replace(/-/g, "")
+  const url = "https://universalis.com/USA/" + yyyymmdd + "/mass.htm"
+  const res = await fetch(url, {
+    headers: { "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36" },
+    signal: AbortSignal.timeout(20000)
+  })
+  if (!res.ok) throw new Error("HTTP " + res.status)
+  const html = await res.text()
+  const parsed = parseUniversalis(html)
+  if (!parsed.readings || parsed.readings.length === 0) throw new Error("No readings parsed")
+
+  parsed.date = date
+  parsed.source = "universalis.com"
+
+  const json = JSON.stringify(parsed)
+  fs.mkdirSync(cacheDir, { recursive: true })
+  fs.writeFileSync(cacheFile, json + "\n")
+  return json
+}
+
+function main() {
+  const args = process.argv.slice(2)
+  const cmd = args[0]
+  if (cmd === "search") {
+    const kind = args[1]
+    const query = args.slice(2).join(" ")
+    if (kind === "bible") searchBible(query)
+    else if (kind === "catechism") searchCatechism(query)
+    else { status("Unknown search target. Use bible or catechism."); process.exit(2) }
+  } else if (cmd === "read") {
+    readReference(args.slice(1).join(" "))
+  } else if (cmd === "readings") {
+    const refresh = args.indexOf("--refresh") >= 0
+    const dateArg = args[1] && args[1] !== "--refresh" ? args[1] : ""
+    readingsCommand(dateArg, refresh)
+      .then((json) => process.stdout.write(json + "\n"))
+      .catch((err) => process.stdout.write(JSON.stringify({ error: String(err && err.message ? err.message : err) }) + "\n"))
+  } else if (cmd === "help" || cmd === "-h" || cmd === "--help") {
+    usage()
+  } else {
+    usage()
+    process.exit(2)
+  }
+}
+
+main()

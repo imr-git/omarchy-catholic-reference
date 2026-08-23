@@ -1,0 +1,674 @@
+[
+  {
+    "name": "Genesis",
+    "abbrev": "Gn",
+    "aliases": [
+      "genesis",
+      "gen"
+    ]
+  },
+  {
+    "name": "Exodus",
+    "abbrev": "Ex",
+    "aliases": [
+      "exodus",
+      "exo",
+      "exod"
+    ]
+  },
+  {
+    "name": "Leviticus",
+    "abbrev": "Lv",
+    "aliases": [
+      "leviticus",
+      "lev"
+    ]
+  },
+  {
+    "name": "Numbers",
+    "abbrev": "Nm",
+    "aliases": [
+      "numbers",
+      "num"
+    ]
+  },
+  {
+    "name": "Deuteronomy",
+    "abbrev": "Dt",
+    "aliases": [
+      "deuteronomy",
+      "deut",
+      "dt"
+    ]
+  },
+  {
+    "name": "Joshua",
+    "abbrev": "Jos",
+    "aliases": [
+      "joshua",
+      "josue",
+      "jos"
+    ]
+  },
+  {
+    "name": "Judges",
+    "abbrev": "Jgs",
+    "aliases": [
+      "judges",
+      "jdg",
+      "jgs",
+      "judg"
+    ]
+  },
+  {
+    "name": "Ruth",
+    "abbrev": "Ru",
+    "aliases": [
+      "ruth",
+      "rut"
+    ]
+  },
+  {
+    "name": "1 Samuel",
+    "abbrev": "1 Sm",
+    "aliases": [
+      "1 samuel",
+      "first samuel",
+      "i samuel",
+      "1 sam"
+    ]
+  },
+  {
+    "name": "2 Samuel",
+    "abbrev": "2 Sm",
+    "aliases": [
+      "2 samuel",
+      "second samuel",
+      "ii samuel",
+      "2 sam"
+    ]
+  },
+  {
+    "name": "1 Kings",
+    "abbrev": "1 Kgs",
+    "aliases": [
+      "1 kings",
+      "first kings",
+      "i kings",
+      "1 kgs"
+    ]
+  },
+  {
+    "name": "2 Kings",
+    "abbrev": "2 Kgs",
+    "aliases": [
+      "2 kings",
+      "second kings",
+      "ii kings",
+      "2 kgs"
+    ]
+  },
+  {
+    "name": "1 Chronicles",
+    "abbrev": "1 Chr",
+    "aliases": [
+      "1 chronicles",
+      "first chronicles",
+      "i chronicles",
+      "1 chr"
+    ]
+  },
+  {
+    "name": "2 Chronicles",
+    "abbrev": "2 Chr",
+    "aliases": [
+      "2 chronicles",
+      "second chronicles",
+      "ii chronicles",
+      "2 chr"
+    ]
+  },
+  {
+    "name": "Ezra",
+    "abbrev": "Ezr",
+    "aliases": [
+      "ezra",
+      "ezr"
+    ]
+  },
+  {
+    "name": "Nehemiah",
+    "abbrev": "Neh",
+    "aliases": [
+      "nehemiah",
+      "neh",
+      "nehemias"
+    ]
+  },
+  {
+    "name": "Tobit",
+    "abbrev": "Tb",
+    "aliases": [
+      "tobit",
+      "tobias",
+      "tob"
+    ]
+  },
+  {
+    "name": "Judith",
+    "abbrev": "Jdt",
+    "aliases": [
+      "judith",
+      "jdt",
+      "jdth"
+    ]
+  },
+  {
+    "name": "Esther",
+    "abbrev": "Est",
+    "aliases": [
+      "esther",
+      "est"
+    ]
+  },
+  {
+    "name": "Job",
+    "abbrev": "Jb",
+    "aliases": [
+      "job"
+    ]
+  },
+  {
+    "name": "Psalms",
+    "abbrev": "Ps",
+    "aliases": [
+      "psalms",
+      "psalm",
+      "ps"
+    ]
+  },
+  {
+    "name": "Proverbs",
+    "abbrev": "Prv",
+    "aliases": [
+      "proverbs",
+      "prov",
+      "prv"
+    ]
+  },
+  {
+    "name": "Ecclesiastes",
+    "abbrev": "Eccl",
+    "aliases": [
+      "ecclesiastes",
+      "eccles",
+      "eccl",
+      "qoheleth"
+    ]
+  },
+  {
+    "name": "Song of Songs",
+    "abbrev": "Sg",
+    "aliases": [
+      "song of songs",
+      "song of solomon",
+      "canticle of canticles",
+      "canticles",
+      "songs"
+    ]
+  },
+  {
+    "name": "Wisdom",
+    "abbrev": "Wis",
+    "aliases": [
+      "wisdom",
+      "wisdom of solomon",
+      "wis"
+    ]
+  },
+  {
+    "name": "Sirach",
+    "abbrev": "Sir",
+    "aliases": [
+      "sirach",
+      "ecclesiasticus",
+      "sir"
+    ]
+  },
+  {
+    "name": "Isaiah",
+    "abbrev": "Is",
+    "aliases": [
+      "isaiah",
+      "isaias",
+      "isa"
+    ]
+  },
+  {
+    "name": "Jeremiah",
+    "abbrev": "Jer",
+    "aliases": [
+      "jeremiah",
+      "jeremias",
+      "jer"
+    ]
+  },
+  {
+    "name": "Lamentations",
+    "abbrev": "Lam",
+    "aliases": [
+      "lamentations",
+      "lam"
+    ]
+  },
+  {
+    "name": "Baruch",
+    "abbrev": "Bar",
+    "aliases": [
+      "baruch",
+      "bar"
+    ]
+  },
+  {
+    "name": "Ezekiel",
+    "abbrev": "Ez",
+    "aliases": [
+      "ezekiel",
+      "ezechiel",
+      "ezek",
+      "eze"
+    ]
+  },
+  {
+    "name": "Daniel",
+    "abbrev": "Dn",
+    "aliases": [
+      "daniel",
+      "dan",
+      "dn"
+    ]
+  },
+  {
+    "name": "Hosea",
+    "abbrev": "Hos",
+    "aliases": [
+      "hosea",
+      "osea",
+      "osee",
+      "hos"
+    ]
+  },
+  {
+    "name": "Joel",
+    "abbrev": "Jl",
+    "aliases": [
+      "joel",
+      "jl"
+    ]
+  },
+  {
+    "name": "Amos",
+    "abbrev": "Am",
+    "aliases": [
+      "amos",
+      "am"
+    ]
+  },
+  {
+    "name": "Obadiah",
+    "abbrev": "Ob",
+    "aliases": [
+      "obadiah",
+      "abdias",
+      "obad",
+      "ob"
+    ]
+  },
+  {
+    "name": "Jonah",
+    "abbrev": "Jon",
+    "aliases": [
+      "jonah",
+      "jonas",
+      "jon"
+    ]
+  },
+  {
+    "name": "Micah",
+    "abbrev": "Mi",
+    "aliases": [
+      "micah",
+      "micheas",
+      "mic"
+    ]
+  },
+  {
+    "name": "Nahum",
+    "abbrev": "Na",
+    "aliases": [
+      "nahum",
+      "nah"
+    ]
+  },
+  {
+    "name": "Habakkuk",
+    "abbrev": "Hb",
+    "aliases": [
+      "habakkuk",
+      "habacuc",
+      "hab"
+    ]
+  },
+  {
+    "name": "Zephaniah",
+    "abbrev": "Zep",
+    "aliases": [
+      "zephaniah",
+      "sophonias",
+      "sophoniah",
+      "zeph"
+    ]
+  },
+  {
+    "name": "Haggai",
+    "abbrev": "Hg",
+    "aliases": [
+      "haggai",
+      "aggeus",
+      "hag",
+      "hg"
+    ]
+  },
+  {
+    "name": "Zechariah",
+    "abbrev": "Zec",
+    "aliases": [
+      "zechariah",
+      "zacharias",
+      "zech",
+      "zec"
+    ]
+  },
+  {
+    "name": "Malachi",
+    "abbrev": "Mal",
+    "aliases": [
+      "malachi",
+      "malachias",
+      "mal"
+    ]
+  },
+  {
+    "name": "1 Maccabees",
+    "abbrev": "1 Mc",
+    "aliases": [
+      "1 maccabees",
+      "first maccabees",
+      "i maccabees",
+      "1 mac"
+    ]
+  },
+  {
+    "name": "2 Maccabees",
+    "abbrev": "2 Mc",
+    "aliases": [
+      "2 maccabees",
+      "second maccabees",
+      "ii maccabees",
+      "2 mac"
+    ]
+  },
+  {
+    "name": "Matthew",
+    "abbrev": "Mt",
+    "aliases": [
+      "matthew",
+      "matt",
+      "mt"
+    ]
+  },
+  {
+    "name": "Mark",
+    "abbrev": "Mk",
+    "aliases": [
+      "mark",
+      "mk"
+    ]
+  },
+  {
+    "name": "Luke",
+    "abbrev": "Lk",
+    "aliases": [
+      "luke",
+      "lk"
+    ]
+  },
+  {
+    "name": "John",
+    "abbrev": "Jn",
+    "aliases": [
+      "john",
+      "jn",
+      "joh"
+    ]
+  },
+  {
+    "name": "Acts",
+    "abbrev": "Acts",
+    "aliases": [
+      "acts",
+      "acts of the apostles",
+      "act"
+    ]
+  },
+  {
+    "name": "Romans",
+    "abbrev": "Rom",
+    "aliases": [
+      "romans",
+      "rom"
+    ]
+  },
+  {
+    "name": "1 Corinthians",
+    "abbrev": "1 Cor",
+    "aliases": [
+      "1 corinthians",
+      "first corinthians",
+      "i corinthians",
+      "1 cor"
+    ]
+  },
+  {
+    "name": "2 Corinthians",
+    "abbrev": "2 Cor",
+    "aliases": [
+      "2 corinthians",
+      "second corinthians",
+      "ii corinthians",
+      "2 cor"
+    ]
+  },
+  {
+    "name": "Galatians",
+    "abbrev": "Gal",
+    "aliases": [
+      "galatians",
+      "gal"
+    ]
+  },
+  {
+    "name": "Ephesians",
+    "abbrev": "Eph",
+    "aliases": [
+      "ephesians",
+      "eph"
+    ]
+  },
+  {
+    "name": "Philippians",
+    "abbrev": "Phil",
+    "aliases": [
+      "philippians",
+      "phil",
+      "philip"
+    ]
+  },
+  {
+    "name": "Colossians",
+    "abbrev": "Col",
+    "aliases": [
+      "colossians",
+      "col"
+    ]
+  },
+  {
+    "name": "1 Thessalonians",
+    "abbrev": "1 Thes",
+    "aliases": [
+      "1 thessalonians",
+      "first thessalonians",
+      "i thessalonians",
+      "1 thes",
+      "1 thess"
+    ]
+  },
+  {
+    "name": "2 Thessalonians",
+    "abbrev": "2 Thes",
+    "aliases": [
+      "2 thessalonians",
+      "second thessalonians",
+      "ii thessalonians",
+      "2 thes",
+      "2 thess"
+    ]
+  },
+  {
+    "name": "1 Timothy",
+    "abbrev": "1 Tm",
+    "aliases": [
+      "1 timothy",
+      "first timothy",
+      "i timothy",
+      "1 tim",
+      "1 tm"
+    ]
+  },
+  {
+    "name": "2 Timothy",
+    "abbrev": "2 Tm",
+    "aliases": [
+      "2 timothy",
+      "second timothy",
+      "ii timothy",
+      "2 tim",
+      "2 tm"
+    ]
+  },
+  {
+    "name": "Titus",
+    "abbrev": "Ti",
+    "aliases": [
+      "titus",
+      "tit",
+      "ti"
+    ]
+  },
+  {
+    "name": "Philemon",
+    "abbrev": "Phlm",
+    "aliases": [
+      "philemon",
+      "philem",
+      "phlm"
+    ]
+  },
+  {
+    "name": "Hebrews",
+    "abbrev": "Heb",
+    "aliases": [
+      "hebrews",
+      "heb"
+    ]
+  },
+  {
+    "name": "James",
+    "abbrev": "Jas",
+    "aliases": [
+      "james",
+      "jas",
+      "jam"
+    ]
+  },
+  {
+    "name": "1 Peter",
+    "abbrev": "1 Pt",
+    "aliases": [
+      "1 peter",
+      "first peter",
+      "i peter",
+      "1 pet",
+      "1 pt"
+    ]
+  },
+  {
+    "name": "2 Peter",
+    "abbrev": "2 Pt",
+    "aliases": [
+      "2 peter",
+      "second peter",
+      "ii peter",
+      "2 pet",
+      "2 pt"
+    ]
+  },
+  {
+    "name": "1 John",
+    "abbrev": "1 Jn",
+    "aliases": [
+      "1 john",
+      "first john",
+      "i john",
+      "1 jn"
+    ]
+  },
+  {
+    "name": "2 John",
+    "abbrev": "2 Jn",
+    "aliases": [
+      "2 john",
+      "second john",
+      "ii john",
+      "2 jn"
+    ]
+  },
+  {
+    "name": "3 John",
+    "abbrev": "3 Jn",
+    "aliases": [
+      "3 john",
+      "third john",
+      "iii john",
+      "3 jn"
+    ]
+  },
+  {
+    "name": "Jude",
+    "abbrev": "Jude",
+    "aliases": [
+      "jude",
+      "judas"
+    ]
+  },
+  {
+    "name": "Revelation",
+    "abbrev": "Rev",
+    "aliases": [
+      "revelation",
+      "revelations",
+      "apocalypse",
+      "rev"
+    ]
+  }
+]
