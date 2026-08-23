@@ -102,14 +102,36 @@ function subseqScore(query, text) {
   return score
 }
 
-function fuzzyScore(query, text) {
-  const q = query.toLowerCase()
+function escapeRegex(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+}
+
+// Score a query against a text. A single-word query must match as a whole
+// word (case-insensitive) so "cremation" never matches "created"/"creation".
+// Multi-word phrases keep fuzzy subsequence matching, boosted heavily when
+// every word also appears as a whole word.
+function scoreMatch(query, text) {
+  const q = String(query).toLowerCase().trim()
+  if (!q) return 0
   const t = text.toLowerCase()
-  const compact = q.replace(/\s+/g, "")
-  if (!compact) return 0
+  const words = q.split(/\s+/).filter(Boolean)
+
+  if (words.length === 1) {
+    const re = new RegExp("\\b" + escapeRegex(words[0]) + "\\b", "g")
+    const matches = t.match(re)
+    if (!matches) return 0
+    return 1000 + Math.min(matches.length, 20)
+  }
+
+  const compact = words.join("")
   let score = subseqScore(compact, t)
   if (score === 0) return 0
-  if (t.indexOf(q) !== -1) score += 40
+  let all = true
+  for (const w of words) {
+    if (!new RegExp("\\b" + escapeRegex(w) + "\\b").test(t)) { all = false; break }
+  }
+  if (all) score += 800
+  if (t.indexOf(q) !== -1) score += 400
   return score
 }
 
@@ -173,7 +195,7 @@ function searchBible(query) {
   const scored = []
   for (let i = 0; i < verses.length; i++) {
     const v = verses[i]
-    const score = fuzzyScore(q, v.text)
+    const score = scoreMatch(q, v.text)
     if (score > 0) scored.push({ score, index: i, v })
   }
   scored.sort((a, b) => (b.score - a.score) || (a.index - b.index))
@@ -196,7 +218,7 @@ function searchCatechism(query) {
   const scored = []
   for (let i = 0; i < paragraphs.length; i++) {
     const p = paragraphs[i]
-    const score = fuzzyScore(q, p.text)
+    const score = scoreMatch(q, p.text)
     if (score > 0) scored.push({ score, index: i, p })
   }
   scored.sort((a, b) => (b.score - a.score) || (a.index - b.index))

@@ -332,6 +332,22 @@ Panel {
               if (root.query !== text) root.query = text
               root.scheduleSearch()
             }
+
+            Keys.priority: Keys.BeforeItem
+            Keys.onPressed: function(event) {
+              if (resultModel.count === 0) return
+              if (event.key === Qt.Key_Down) {
+                root.moveSelection(1)
+                event.accepted = true
+              } else if (event.key === Qt.Key_Up) {
+                root.moveSelection(-1)
+                event.accepted = true
+              } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                root.activateSelected()
+                event.accepted = true
+              }
+            }
+
             onAccepted: {
               searchField.focus = false
               keyCatcher.forceActiveFocus()
