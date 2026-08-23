@@ -1,9 +1,9 @@
 # Catholic Reference for Omarchy
 
 An Omarchy Quattro bar widget with a theme-colored Chi-Rho icon and a
-three-tab panel: fuzzy search of the **Douay-Rheims Bible**, fuzzy search of
-the **Catechism of the Catholic Church**, and a bundled **Liturgy of the
-Hours**.
+five-tab panel: fuzzy search of the **Douay-Rheims Bible** and the
+**Catechism of the Catholic Church**, common **Catholic prayers**, the daily
+**Mass readings**, and a bundled **Liturgy of the Hours**.
 
 Plugin id: `io.github.whelanh.catholic-reference`
 

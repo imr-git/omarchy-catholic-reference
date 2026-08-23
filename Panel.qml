@@ -5,8 +5,9 @@ import qs.Commons
 import qs.Ui
 import "Model.js" as Model
 
-// Three-tab panel: Bible (Douay-Rheims) and Catechism fuzzy search, plus the
-// bundled Liturgy of the Hours. Search is delegated to bin/omarchy-catholic.
+// Five-tab panel: Bible (Douay-Rheims) and Catechism fuzzy search, Catholic
+// prayers, daily Mass readings, and the bundled Liturgy of the Hours. Search
+// is delegated to bin/omarchy-catholic.
 Panel {
   id: root
   moduleName: "io.github.whelanh.catholic-reference"
