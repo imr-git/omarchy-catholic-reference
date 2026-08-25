@@ -76,6 +76,13 @@
       "latin_name": "Anima Christi",
       "english": "Soul of Christ, sanctify me. Body of Christ, save me. Blood of Christ, inebriate me. Water from the side of Christ, wash me. Passion of Christ, strengthen me. O good Jesus, hear me. Within thy wounds hide me. Permit me not to be separated from thee. From the wicked foe defend me. At the hour of my death call me. And bid me come to thee, that with thy saints I may praise thee for ever and ever. Amen.",
       "latin": "Anima Christi, sanctifica me. Corpus Christi, salva me. Sanguis Christi, inebria me. Aqua lateris Christi, lava me. Passio Christi, conforta me. O bone Iesu, exaudi me. Intra tua vulnera absconde me. Ne permiseris me separari a te. Ab hoste maligno defende me. In hora mortis meae voca me. Et iube me venire ad te, ut cum Sanctis tuis laudem te in saecula saeculorum. Amen."
+    },
+    {
+      "id": "rosary_mysteries",
+      "name": "Rosary Mysteries",
+      "latin_name": "",
+      "english": "Joyful Mysteries (Monday & Saturday)\n1. The Annunciation\n2. The Visitation\n3. The Nativity\n4. The Presentation in the Temple\n5. The Finding of Jesus in the Temple\n\nSorrowful Mysteries (Tuesday & Friday)\n1. The Agony in the Garden\n2. The Scourging at the Pillar\n3. The Crowning with Thorns\n4. The Carrying of the Cross\n5. The Crucifixion\n\nGlorious Mysteries (Wednesday & Sunday)\n1. The Resurrection\n2. The Ascension\n3. The Descent of the Holy Spirit\n4. The Assumption of Mary\n5. The Coronation of Mary\n\nLuminous Mysteries (Thursday)\n1. The Baptism of Jesus in the Jordan\n2. The Wedding at Cana\n3. The Proclamation of the Kingdom of God\n4. The Transfiguration\n5. The Institution of the Eucharist",
+      "latin": ""
     }
   ]
 }
