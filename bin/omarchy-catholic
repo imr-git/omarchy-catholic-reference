@@ -400,6 +400,7 @@ function parseUniversalis(html) {
   const limitEnd = endIdx >= 0 ? endIdx : html.length
 
   const readings = []
+  let seenGospel = false
   for (let i = 0; i < tables.length; i++) {
     if (readings.length >= MAX_READINGS) break
     const t = tables[i]
@@ -412,21 +413,30 @@ function parseUniversalis(html) {
 
     const heading = decodeHtml(match1(seg, /<h4[^>]*>([\s\S]*?)<\/h4>/)).trim()
 
+    // The Responsorial Psalm repeats its refrain, which universalis marks
+    // with <i>. Keep that flag so the panel can render it in bold italics.
     const lines = []
-    const lineRe = /<div class="(?:p|v|vi|v gb)"[^>]*>([\s\S]*?)<\/div>/g
+    const lineRe = /<div class="(?:p|pi|v|vi|v gb)"[^>]*>([\s\S]*?)<\/div>/g
     let lm
     while ((lm = lineRe.exec(seg)) !== null) {
+      const refrain = /<\/?i\b/i.test(lm[1])
       const line = decodeHtml(lm[1]).trim()
-      if (line) lines.push(line)
+      if (line) lines.push({ t: line, r: refrain })
       if (lines.length >= MAX_LINES_PER_READING) break
     }
 
-    readings.push({
+    const reading = {
       label: cap(label, FIELD_CAPS.label),
       reference: cap(reference, FIELD_CAPS.reference),
       heading: cap(heading, FIELD_CAPS.heading),
-      text: cap(lines.join("\n"), FIELD_CAPS.text)
-    })
+      text: cap(lines.map((l) => l.t).join("\n"), FIELD_CAPS.text),
+      lines: lines
+    }
+    // A second "First reading" that follows a "Gospel" begins the optional
+    // set of readings offered on some feasts.
+    if (/^gospel$/i.test(label)) seenGospel = true
+    if (seenGospel && /^first reading$/i.test(label)) reading.optionalStart = true
+    readings.push(reading)
   }
 
   return { title, color, year, readings }
@@ -470,6 +480,20 @@ function cacheWrite(file, data) {
   fs.renameSync(tmp, file)
 }
 
+// Remove cached readings for any other date, keeping only the file just
+// written. Restricted to the readings-YYYY-MM-DD.json naming scheme inside
+// the cache directory.
+function cleanupReadingsCache(dir, keepFile) {
+  let entries
+  try { entries = fs.readdirSync(dir) } catch (e) { return }
+  const keep = path.basename(keepFile)
+  for (const name of entries) {
+    if (!/^readings-\d{4}-\d{2}-\d{2}\.json$/.test(name)) continue
+    if (name === keep) continue
+    try { fs.unlinkSync(path.join(dir, name)) } catch (e) {}
+  }
+}
+
 async function readingsCommand(dateArg, refresh) {
   const date = /^\d{4}-\d{2}-\d{2}$/.test(dateArg || "") ? dateArg : localIsoDate()
   const cacheDir = path.join(os.homedir(), ".local", "state", "omarchy", "catholic-reference")
@@ -491,6 +515,7 @@ async function readingsCommand(dateArg, refresh) {
 
   const json = JSON.stringify(parsed)
   cacheWrite(cacheFile, json + "\n")
+  cleanupReadingsCache(cacheDir, cacheFile)
   return json
 }
 

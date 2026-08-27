@@ -787,6 +787,32 @@ Panel {
                   width: readingsColumn.width
                   spacing: Style.space(4)
 
+                  readonly property var bodyLines: {
+                    var ls = modelData.lines
+                    if (ls && ls.length) return ls
+                    var out = []
+                    var raw = String(modelData.text || "").split("\n")
+                    for (var i = 0; i < raw.length; i++) if (raw[i] !== "") out.push({ t: raw[i], r: false })
+                    return out
+                  }
+
+                  Rectangle {
+                    visible: modelData.optionalStart === true
+                    width: parent.width
+                    height: 1
+                    color: Color.popups.border
+                  }
+                  Text {
+                    visible: modelData.optionalStart === true
+                    width: parent.width
+                    text: "OPTIONAL READINGS"
+                    textFormat: Text.PlainText
+                    color: Color.accent
+                    font.family: root.fontFamily
+                    font.pixelSize: Style.font.caption
+                    font.bold: true
+                  }
+
                   Text {
                     width: parent.width
                     text: modelData.label ? String(modelData.label).toUpperCase() : ""
@@ -818,14 +844,21 @@ Panel {
                     font.italic: true
                     wrapMode: Text.WordWrap
                   }
-                  Text {
-                    width: parent.width
-                    text: modelData.text || ""
-                    textFormat: Text.PlainText
-                    color: root.barForeground
-                    font.family: root.fontFamily
-                    font.pixelSize: Style.font.body
-                    wrapMode: Text.WordWrap
+
+                  Repeater {
+                    model: bodyLines
+                    delegate: Text {
+                      required property var modelData
+                      width: parent.width
+                      text: modelData.t || ""
+                      textFormat: Text.PlainText
+                      color: root.barForeground
+                      font.family: root.fontFamily
+                      font.pixelSize: Style.font.body
+                      font.bold: modelData.r === true
+                      font.italic: modelData.r === true
+                      wrapMode: Text.WordWrap
+                    }
                   }
                 }
               }
