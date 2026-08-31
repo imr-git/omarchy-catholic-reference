@@ -26,7 +26,7 @@ Panel {
 
   readonly property var barIdentity: hostWidget || root
   // Popup text must not inherit the wallpaper-adaptive transparent bar color.
-  readonly property color panelForeground: Color.popups.text
+  readonly property color panelForeground: (Color.popups.text !== undefined) ? Color.popups.text : Color.foreground
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
 
   readonly property string readingsMeta: {
